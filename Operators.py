@@ -53,14 +53,34 @@ def eval_fit(ind):
     return res
 
 def mutate(n, ind):
+    #TODO try to change covered queens often
     if random.random() < 0.5:
         ind[random.randint(0, n-1)] = random.randint(0, n-1)
     else:
         idx1 = random.randint(0, n - 1)
         idx2 = random.randint(0, n - 1)
         ind[idx1], ind[idx2] = ind[idx2], ind[idx1]
+    if random.random() < 0.5:
+        repair(ind, n)
     pass
 
+# if individual has several queens at one row -> replace on the not used rows
+def repair(ind, n):
+    indexes = dict()
+    values = []
+    for i, v in enumerate(ind):
+        if v not in values:
+            values.append(v)
+            indexes[v] = list()
+        indexes[v].append(i)
+    not_used = [q for q in range(n) if q not in values]
+    for v, ids in indexes.items():
+        while len(ids) > 1:
+            change_idx = ids[random.randint(0, len(ids) - 1)]
+            change_val = not_used[random.randint(0, len(not_used) - 1)]
+            ind[change_idx] = change_val
+            not_used.remove(change_val)
+            ids.remove(change_idx)
 
 class GA_for_queens:
 
@@ -97,6 +117,10 @@ class GA_for_queens:
         toolbox.register("select", tools.selTournament, tournsize=3)
 
         pop = toolbox.population(pop_size)
+        #repair
+        for p in pop:
+            repair(p, n)
+
         self.pop = pop
         self.toolbox = toolbox
 
